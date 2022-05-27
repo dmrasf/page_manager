@@ -5,8 +5,8 @@
 #include "src/core/lv_obj.h"
 #include <stdint.h>
 
-#define LCD_V 300
-#define LCD_H 300
+#define LCD_V 800
+#define LCD_H 600
 
 typedef struct page_manager_t page_manager;
 typedef struct page_base_node_t page_base_node;
@@ -28,6 +28,10 @@ typedef enum page_anim_curve_e {
     PAGE_ANIM_LINEAR = 0,
     PAGE_ANIM_EASE_IN,
     PAGE_ANIM_EASE_OUT,
+    PAGE_ANIM_EASE_IN_OUT,
+    PAGE_ANIM_STEP,
+    PAGE_ANIM_OVERSHOOT,
+    PAGE_ANIM_BOUNCE,
 } page_anim_curve;
 
 typedef struct page_anim_attr_t {
@@ -44,9 +48,8 @@ typedef struct page_anim_desc_t {
 } page_anim_desc;
 
 typedef struct page_desc_t {
-    char *page_name;           /* 页面名字 */
-    create_page_t create_page; /* 页面创建函数 */
-    // 页面生命周期回调函数
+    char *page_name;                       /* 页面名字 */
+    create_page_t create_page;             /* 页面创建函数 */
     page_state_callback on_will_load;      /* 即将创建 */
     page_state_callback on_loaded;         /* 创建完成 */
     page_state_callback on_will_appear;    /* 即将显示 */
@@ -55,8 +58,7 @@ typedef struct page_desc_t {
     page_state_callback on_disappeared;    /* 设置为不可见 */
     page_state_callback on_will_unload;    /* 即将移除 */
     page_state_callback on_unloaded;       /* 已经移除 */
-    // 页面切换动画
-    page_anim_desc anim_desc;
+    page_anim_desc anim_desc;              /* 页面切换动画参数 */
 } page_desc;
 
 typedef enum {
@@ -79,4 +81,4 @@ typedef struct page_base_t {
     bool is_anim_busy;    /* 页面切换动画执行中 */
 } page_base;
 
-#endif
+#endif /* __PAGE_BASE_H__ */

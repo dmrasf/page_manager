@@ -9,9 +9,7 @@
 #include "src/misc/lv_anim.h"
 #include "src/misc/lv_color.h"
 
-// 页面消失
 static lv_anim_t page_appear_anim;
-// 页面显示
 static lv_anim_t page_disappear_anim;
 
 static void anim_set_path(lv_anim_t *a, page_anim_curve path);
@@ -20,7 +18,7 @@ static void anim_set_type(lv_anim_t *a, page_anim_type type, bool is_appear);
 static void page_anim_move_y_callback(struct _lv_anim_t *a, int32_t v)
 {
     lv_obj_set_pos(((page_base *)a->user_data)->lv_root, 0, v);
-    if (a->end_value == v) {
+    if (a->act_time == a->time) {
         lv_obj_set_pos(((page_base *)a->user_data)->lv_root, 0, 0);
         page_state_run(a->user_data);
     }
@@ -29,7 +27,7 @@ static void page_anim_move_y_callback(struct _lv_anim_t *a, int32_t v)
 static void page_anim_move_x_callback(struct _lv_anim_t *a, int32_t v)
 {
     lv_obj_set_pos(((page_base *)a->user_data)->lv_root, v, 0);
-    if (a->end_value == v) {
+    if (a->act_time == a->time) {
         lv_obj_set_pos(((page_base *)a->user_data)->lv_root, 0, 0);
         page_state_run(a->user_data);
     }
@@ -38,7 +36,7 @@ static void page_anim_move_x_callback(struct _lv_anim_t *a, int32_t v)
 static void page_anim_fade_callback(struct _lv_anim_t *a, int32_t v)
 {
     lv_obj_set_style_opa(((page_base *)a->user_data)->lv_root, v, 0);
-    if (a->end_value == v) {
+    if (a->act_time == a->time) {
         lv_obj_set_style_opa(((page_base *)a->user_data)->lv_root, LV_OPA_MAX, 0);
         page_state_run(a->user_data);
     }
@@ -46,7 +44,7 @@ static void page_anim_fade_callback(struct _lv_anim_t *a, int32_t v)
 
 static void page_anim_none_callback(struct _lv_anim_t *a, int32_t v)
 {
-    if (a->end_value == v)
+    if (a->act_time == a->time)
         page_state_run(a->user_data);
 }
 
@@ -98,6 +96,18 @@ static void anim_set_path(lv_anim_t *a, page_anim_curve path)
         break;
     case PAGE_ANIM_EASE_OUT:
         lv_anim_set_path_cb(a, lv_anim_path_ease_out);
+        break;
+    case PAGE_ANIM_EASE_IN_OUT:
+        lv_anim_set_path_cb(a, lv_anim_path_ease_in_out);
+        break;
+    case PAGE_ANIM_BOUNCE:
+        lv_anim_set_path_cb(a, lv_anim_path_bounce);
+        break;
+    case PAGE_ANIM_STEP:
+        lv_anim_set_path_cb(a, lv_anim_path_step);
+        break;
+    case PAGE_ANIM_OVERSHOOT:
+        lv_anim_set_path_cb(a, lv_anim_path_overshoot);
         break;
     }
 }

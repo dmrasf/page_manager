@@ -1,15 +1,17 @@
 #ifndef __PAGE_LOG_H__
 #define __PAGE_LOG_H__
 
-#define _DEBUG 1
+#define LOG_ENABLE 1
 
-#define debug_cond(cond, fmt, args...) \
-    do {                               \
-        if (cond)                      \
-            printf(fmt, ##args);       \
-    } while (0)
-
-#define debug(fmt, args...) \
-    debug_cond(_DEBUG, fmt, ##args)
-
+#if LOG_ENABLE
+#include <stdio.h>
+#define p_log(fmt, args...) printf("[Log_P] " fmt "\n", ##args)
+#define p_warning(fmt, args...) printf("[Warning_P] " fmt "\n", ##args)
+#define p_error(fmt, args...) printf("[Error_P] " fmt "\n", ##args)
+#else
+#define p_log(...)
+#define p_warning(...)
+#define p_error(...)
 #endif
+
+#endif /* __PAGE_LOG_H__ */

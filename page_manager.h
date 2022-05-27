@@ -20,24 +20,24 @@ typedef struct page_manager_t {
     page_base_node *page_stack;
 } page_manager;
 
-void page_manager_init(void);
+bool page_manager_init(void);
 
-// 注册函数
+// register function
 bool page_register(page_desc *);
 bool page_unregister(page_desc *);
 
-// route函数
+// route function
 page_base *page_push(page_desc *);
 page_base *page_pop(void);
 
-// 生命周期函数
+// state function
 void page_state_run(page_base *);
 
-// 页面切换动画函数
+// page animation function
 void page_anim_init(void);
 void page_set_appear_anim(page_base *, page_anim_attr *);
 void page_set_disappear_anim(page_base *, page_anim_attr *);
 void page_anim_appear_start(void);
 void page_anim_disappear_start(void);
 
-#endif
+#endif /* __PAGE_MANAGER_H__ */

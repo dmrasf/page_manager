@@ -29,7 +29,6 @@ void page_state_run(page_base *page)
         break;
     case PAGE_STATE_WILL_APPEAR:
         page->state = do_will_appear(page);
-        // 动画完成后运行 page_state_run(page);
         page_anim_appear_start();
         break;
     case PAGE_STATE_DID_APPEAR:
@@ -41,7 +40,6 @@ void page_state_run(page_base *page)
         break;
     case PAGE_STATE_WILL_DISAPPEAR:
         page->state = do_will_disappear(page);
-        // 动画完成后运行 page_state_run(page);
         page_anim_disappear_start();
         break;
     case PAGE_STATE_DID_DISAPPEAR:
@@ -55,24 +53,28 @@ void page_state_run(page_base *page)
     }
 }
 
-// 创建lv_obj
+// creat root lv_obj
 static page_state do_load(page_base *page)
 {
+    p_log("page %s: will load", page->desc->page_name);
     if (page->desc->on_will_load != NULL)
         page->desc->on_will_load(NULL);
     page->desc->create_page(page);
+    p_log("page %s: loaded", page->desc->page_name);
     if (page->desc->on_loaded != NULL)
         page->desc->on_loaded(page->lv_root);
     return PAGE_STATE_WILL_APPEAR;
 }
 
-// 清除hidden flag
+// clear hidden flag
 static page_state do_will_appear(page_base *page)
 {
+    p_log("page %s: will appear", page->desc->page_name);
     if (page->desc->on_will_appear != NULL)
         page->desc->on_will_appear(page->lv_root);
     lv_obj_clear_flag(page->lv_root, LV_OBJ_FLAG_HIDDEN);
-    // 初始化动画属性
+
+    // animation init
     if (page->is_push)
         page_set_appear_anim(page, &page->desc->anim_desc.page_push_in);
     else
@@ -81,27 +83,30 @@ static page_state do_will_appear(page_base *page)
     return PAGE_STATE_DID_APPEAR;
 }
 
-// 已经显示在屏幕上
+// page is show in screen
 static page_state do_did_appear(page_base *page)
 {
+    p_log("page %s: appeared", page->desc->page_name);
+    page->is_anim_busy = false;
     if (page->desc->on_appeared != NULL)
         page->desc->on_appeared(page->lv_root);
-    page->is_anim_busy = false;
 
-    // 新栈的页面动画结束之后再运行状态
     if (page->is_push)
         if (page->node->next != NULL)
+            // 旧页面没有动画，所以需要等新栈的页面动画结束之后再运行状态
             if (page->node->next->base.desc->anim_desc.page_push_out.anim_type == PAGE_ANIM_NONE)
                 page_state_run(&page->node->next->base);
     return PAGE_STATE_ACTIVITY;
 }
 
-// 做屏幕消失前的工作
+// page will disappear
 static page_state do_will_disappear(page_base *page)
 {
+    p_log("page %s: will disappear", page->desc->page_name);
     if (page->desc->on_will_disappear != NULL)
         page->desc->on_will_disappear(page->lv_root);
-    // 初始化动画属性
+
+    // animation init
     if (page->is_push)
         page_set_disappear_anim(page, &page->desc->anim_desc.page_push_out);
     else
@@ -110,10 +115,11 @@ static page_state do_will_disappear(page_base *page)
     return PAGE_STATE_DID_DISAPPEAR;
 }
 
-// 设置hidden flag
+// add hidden flag
 static page_state do_did_disappear(page_base *page)
 {
     lv_obj_add_flag(page->lv_root, LV_OBJ_FLAG_HIDDEN);
+    p_log("page %s: disappeared", page->desc->page_name);
     if (page->desc->on_disappeared != NULL)
         page->desc->on_disappeared(page->lv_root);
     page->is_anim_busy = false;
@@ -123,14 +129,17 @@ static page_state do_did_disappear(page_base *page)
         return PAGE_STATE_UNLOAD;
 }
 
-// 删除lv_obj
+// del lv_obj
 static page_state do_unload(page_base *page)
 {
+    p_log("page %s: will unload", page->desc->page_name);
     if (page->desc->on_will_unload != NULL)
         page->desc->on_will_unload(page->lv_root);
     lv_obj_del(page->lv_root);
+    p_log("page %s: unloaded", page->desc->page_name);
     if (page->desc->on_unloaded != NULL)
         page->desc->on_unloaded(NULL);
+    // free node in page stack
     free(page->node);
     return PAGE_STATE_IDLE;
 }
