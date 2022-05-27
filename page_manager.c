@@ -101,7 +101,7 @@ bool page_manager_init(void)
  * @return true successful
  * @return false failed
  */
-bool page_register(page_desc *desc)
+static bool page_register(page_desc *desc)
 {
     if (!is_right_page_desc(desc)) {
         p_warning("%s, page_desc foramt error", __FUNCTION__);
@@ -124,12 +124,29 @@ bool page_register(page_desc *desc)
 }
 
 /**
+ * @brief Init page_desc
+ * @param page Pointer to page_desc
+ * @param cb create_page callback function
+ * @param name page name
+ * @return true successful
+ * @return false failed
+ */
+bool page_desc_init(page_desc *page, create_page_t cb, const char *name)
+{
+    if (cb == NULL || name == NULL)
+        return false;
+    page->page_name = name;
+    page->create_page = cb;
+    return page_register(page);
+}
+
+/**
  * @brief Unregister page from default_page_manager pools
  * @param desc Pointer to page description struct
  * @return true successful
  * @return false failed
  */
-bool page_unregister(page_desc *desc)
+bool page_uninstall(page_desc *desc)
 {
     if (!is_right_page_desc(desc)) {
         p_warning("%s: page_desc foramt error", __FUNCTION__);

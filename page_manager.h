@@ -21,10 +21,8 @@ typedef struct page_manager_t {
 } page_manager;
 
 bool page_manager_init(void);
-
-// register function
-bool page_register(page_desc *);
-bool page_unregister(page_desc *);
+bool page_desc_init(page_desc *page, create_page_t cb, const char *name);
+bool page_uninstall(page_desc *);
 
 // route function
 page_base *page_push(page_desc *);

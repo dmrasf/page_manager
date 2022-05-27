@@ -5,9 +5,9 @@
 
 #if LOG_ENABLE
 #include <stdio.h>
-#define p_log(fmt, args...) printf("[Log_P] " fmt "\n", ##args)
-#define p_warning(fmt, args...) printf("[Warning_P] " fmt "\n", ##args)
-#define p_error(fmt, args...) printf("[Error_P] " fmt "\n", ##args)
+#define p_log(fmt, args...) printf("[Log_PM] " fmt "\n", ##args)
+#define p_warning(fmt, args...) printf("[Warning_PM] " fmt "\n", ##args)
+#define p_error(fmt, args...) printf("[Error_PM] " fmt "\n", ##args)
 #else
 #define p_log(...)
 #define p_warning(...)
