@@ -270,9 +270,10 @@ page_base *page_pop(void)
 
     page_base_node *pbn = default_page_manager->page_stack;
     pbn->base.is_push = false;
+    default_page_manager->page_stack = pbn->next;
+
     // avtivity->will disappear->start disappear anim->animation finishes->disappeared->->will_appear->unload
     page_state_run(&pbn->base);
 
-    default_page_manager->page_stack = pbn->next;
     return &default_page_manager->page_stack->base;
 }

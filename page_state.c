@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "page_log.h"
 #include "src/misc/lv_mem.h"
+#include "src/misc/lv_style.h"
 
 static page_state do_load(page_base *);
 static page_state do_will_appear(page_base *);
@@ -63,9 +64,6 @@ static page_state do_load(page_base *page)
     page->lv_root = lv_obj_create(lv_scr_act());
     page->desc->create_page(page->lv_root);
     p_log("page %s: loaded", page->desc->page_name);
-    lv_mem_monitor_t mon;
-    lv_mem_monitor(&mon);
-    p_log("used: %6d (%3d %%)", (int)mon.total_size - mon.free_size, mon.used_pct);
     if (page->desc->on_loaded != NULL)
         page->desc->on_loaded(page->lv_root);
     return PAGE_STATE_WILL_APPEAR;
@@ -134,17 +132,33 @@ static page_state do_did_disappear(page_base *page)
         return PAGE_STATE_UNLOAD;
 }
 
+// free styles mem
+static void free_page_styles(const lv_obj_t *obj)
+{
+    if (obj == NULL)
+        return;
+    for (int i = 0; i < obj->style_cnt; i++) {
+        // use user_data save style pointer
+        if (obj->user_data != 0 && obj->styles[i].style == obj->user_data) {
+            lv_style_reset(obj->styles[i].style);
+            free(obj->styles[i].style);
+        }
+    }
+    int child_cnt = lv_obj_get_child_cnt(obj);
+    for (int i = 0; i < child_cnt; i++)
+        free_page_styles(lv_obj_get_child(obj, i));
+}
+
 // del lv_obj
 static page_state do_unload(page_base *page)
 {
     p_log("page %s: will unload", page->desc->page_name);
     if (page->desc->on_will_unload != NULL)
         page->desc->on_will_unload(page->lv_root);
+    // need to reset all style int root&root's children
+    free_page_styles(page->lv_root);
     lv_obj_del(page->lv_root);
     p_log("page %s: unloaded", page->desc->page_name);
-    lv_mem_monitor_t mon;
-    lv_mem_monitor(&mon);
-    p_log("used: %6d (%3d %%)", (int)mon.total_size - mon.free_size, mon.used_pct);
     if (page->desc->on_unloaded != NULL)
         page->desc->on_unloaded(NULL);
     // free node in page stack

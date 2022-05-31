@@ -3,6 +3,7 @@
 
 #include "lvgl.h"
 #include "src/core/lv_obj.h"
+#include "src/core/lv_obj_style.h"
 #include <stdint.h>
 
 #define LCD_V 240
@@ -12,7 +13,7 @@ typedef struct page_manager_t page_manager;
 typedef struct page_base_node_t page_base_node;
 typedef struct page_base_t page_base;
 
-typedef void (*create_page_t)(const lv_obj_t *);
+typedef void (*create_page_t)(lv_obj_t *);
 typedef void (*page_state_callback)(const lv_obj_t *);
 
 typedef enum page_anim_type_e {
