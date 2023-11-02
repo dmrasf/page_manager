@@ -1,8 +1,6 @@
 #include "page_manager.h"
 #include "lvgl.h"
 #include "page_log.h"
-#include "src/core/lv_obj_tree.h"
-#include "src/misc/lv_anim.h"
 #include "page_base.h"
 #include <stdbool.h>
 #include <stdlib.h>
@@ -11,6 +9,7 @@
 
 static page_manager *default_page_manager = NULL;
 
+extern void page_state_run(page_base *page);
 /**
  * @brief Determine page description struct is valid
  * @param desc Pointer to page description struct
@@ -73,7 +72,7 @@ static bool find_page_desc_in_stack(page_desc *desc)
 }
 
 /**
- * @brief default_page_manager init and animation init
+ * @brief default_page_manager init
  * @return true init successful
  * @return false init failed
  */
@@ -87,7 +86,6 @@ bool page_manager_init(void)
     if (default_page_manager != NULL) {
         default_page_manager->page_all = NULL;
         default_page_manager->page_stack = NULL;
-        page_anim_init();
         p_log("default_page_manager calloc success");
         return true;
     }
@@ -128,16 +126,36 @@ static bool page_register(page_desc *desc)
  * @param page Pointer to page_desc
  * @param cb create_page callback function
  * @param name page name
+ * @param indev indev driver
  * @return true successful
  * @return false failed
  */
-bool page_desc_init(page_desc *page, create_page_t cb, const char *name)
+bool page_desc_init(page_desc *page, create_page_t cb, const char *name, lv_indev_t *indev)
 {
     if (cb == NULL || name == NULL)
         return false;
-    page->page_name = name;
+    page->page_name = (char *)name;
+    page->style_node = NULL;
     page->create_page = cb;
+    page->indev = indev;
     return page_register(page);
+}
+
+void page_desc_add_style(page_desc *page, lv_style_t *style)
+{
+    page_desc_style_node *new_node = calloc(1, sizeof(page_desc_style_node));
+    new_node->style = style;
+    new_node->next = NULL;
+
+    if (page->style_node == NULL) {
+        page->style_node = new_node;
+        return;
+    }
+
+    page_desc_style_node *node = page->style_node;
+    while (node->next != NULL)
+        node = node->next;
+    node->next = new_node;
 }
 
 /**
@@ -173,23 +191,6 @@ bool page_uninstall(page_desc *desc)
 }
 
 /**
- * @brief Determine page animation is finished
- * @return true finished
- * @return false not yet
- */
-static bool is_page_anim_done(void)
-{
-    bool top1 = false;
-    bool top2 = false;
-    if (default_page_manager->page_stack != NULL) {
-        top1 = default_page_manager->page_stack->base.is_anim_busy;
-        if (default_page_manager->page_stack->next != NULL)
-            top2 = default_page_manager->page_stack->next->base.is_anim_busy;
-    }
-    return !top2 && !top1;
-}
-
-/**
  * @brief Push page to stack
  * @param desc Pointer to page description struct
  * @return page_base* Pointer to page in stack top
@@ -199,10 +200,6 @@ page_base *page_push(page_desc *desc)
     if (default_page_manager == NULL) {
         p_warning("%s: default_page_manager is NULL", __FUNCTION__);
         return false;
-    }
-    if (!is_page_anim_done()) {
-        p_warning("page animation not finished");
-        return NULL;
     }
     if (!find_page_desc_in_pool(desc)) {
         p_warning("%s: page is not in pools", __FUNCTION__);
@@ -232,14 +229,8 @@ page_base *page_push(page_desc *desc)
 
     new_pbn->base.state = PAGE_STATE_LOAD;
 
-    //  state: load->will appear->start appear anim->animation finished->appeared->avtivity
+    //  state: load->will appear->start appear->appeared->avtivity
     page_state_run(&new_pbn->base);
-
-    if (new_pbn->next != NULL)
-        // 判断原栈页面是否有相应动画，没有的话需要等新栈动画结束之后更新状态，否则直接更新状态，同步运行动画
-        if (new_pbn->next->base.desc->anim_desc.page_push_out.anim_type != PAGE_ANIM_NONE)
-            // avtivity->will disappear->start disappear anim->animation finishes->disappeared->->will_appear
-            page_state_run(&new_pbn->next->base);
 
     return &default_page_manager->page_stack->base;
 }
@@ -258,21 +249,17 @@ page_base *page_pop(void)
         p_warning("page stack is NULL");
         return NULL;
     }
-    if (!is_page_anim_done()) {
-        p_warning("Page animation not finished");
-        return NULL;
-    }
 
     if (default_page_manager->page_stack->next != NULL)
         default_page_manager->page_stack->next->base.is_push = false;
-    //  state: will appear->start appear anim->animation finished->appeared->avtivity
+    //  state: will appear->start appear->appeared->avtivity
     page_state_run(&default_page_manager->page_stack->next->base);
 
     page_base_node *pbn = default_page_manager->page_stack;
     pbn->base.is_push = false;
     default_page_manager->page_stack = pbn->next;
 
-    // avtivity->will disappear->start disappear anim->animation finishes->disappeared->->will_appear->unload
+    // avtivity->will disappear->start disappear->disappeared->->will_appear->unload
     page_state_run(&pbn->base);
 
     return &default_page_manager->page_stack->base;

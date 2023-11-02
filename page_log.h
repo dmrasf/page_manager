@@ -1,7 +1,7 @@
 #ifndef __PAGE_LOG_H__
 #define __PAGE_LOG_H__
 
-#define LOG_ENABLE 1
+#define LOG_ENABLE 0
 
 #if LOG_ENABLE
 #include <stdio.h>
